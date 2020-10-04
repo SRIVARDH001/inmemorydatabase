@@ -1,0 +1,15 @@
+target/
+bin/
+
+dependency-reduced-pom.xml
+rebel.xml
+
+.settings/
+.project
+.classpath
+
+.pmdruleset.xml
+.pmd
+*.iml
+.idea/
+
