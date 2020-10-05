@@ -63,29 +63,39 @@ public class InMemoryDatabaseRepositoryImpl implements InMemoryDatabaseRepositor
 	}
 
 	public String get(String key) {
-		if (databaseMap == null || databaseMap.size() == 0) {
+		if ((currentPutTransactionMap == null || currentPutTransactionMap.size() ==0) && (databaseMap == null || databaseMap.size() == 0)) {
 			throw new InMemoryDatabaseException("Error!The in memory database is empty");
 		} else if (isTransactionInProcess) {
 			System.out.println("Another transaction in progress and cannot find value for key " + key);
-			if (currentPutTransactionMap.containsKey(key)) {
-				return currentPutTransactionMap.get(key).getValue();
+			if (databaseMap.containsKey(key)) { // first search committed transaction.
+				return databaseMap.get(key).getValue();
+			} else if (currentPutTransactionMap.containsKey(key)
+					&& currentPutTransactionMap.get(key).getTransactionId().equals(currentTransactionId)) {
+				//return currentPutTransactionMap.get(key).getValue();
+				return null;
 			}
-			return null;
 		}
-		if ( databaseMap.get(key).getTransactionId() != null ) {
-			return null;
+		else {
+			return databaseMap.get(key).getValue();
 		}
-		return databaseMap.get(key).getValue();
+		return null;
 	}
 
 	public String get(String key, String transactionId) {
-		checkIfTransactionDetailsAreCorrect(transactionId);
-		DatabaseEntity entity = databaseMap.get(key);
-		if (entity.getTransactionId().equals(transactionId)) {
-			return entity.getValue();
+		if (isTransactionInProcess && transactionId.equals(currentTransactionId)) {
+			if (currentPutTransactionMap.containsKey(key)) {
+				return currentPutTransactionMap.get(key).getValue();
+			}
 		} else {
-			throw new InMemoryDatabaseException("Error!Cannot find value for key " + key + " with transaction id " + transactionId);
+			DatabaseEntity entity = databaseMap.get(key);
+			if (databaseMap.containsKey(key)) {
+				return entity.getValue();
+			} else {
+				System.out.println("Cannot find value fo key:  " + key);
+				return null;
+			}
 		}
+		return null;
 	}
 
 	public void delete(String key) {
@@ -109,16 +119,17 @@ public class InMemoryDatabaseRepositoryImpl implements InMemoryDatabaseRepositor
 	}
 
 	public void createTransaction(String transactionId) {
+		if (previousTransactionId.contains(transactionId)) {
+			throw new InMemoryDatabaseException("Error!Cannot create a transaction - another transaction with same id "
+					+transactionId+" exists");
+		}
 		if (isTransactionInProcess && currentTransactionId != null) {
 			System.out.println("Another transaction in progress and hence clearing those details");
 			previousTransactionId.add(currentTransactionId);
 			currentTransactionId = transactionId;
 			isTransactionInProcess = true;
 			clearUncommittedTransactions();
-		} if (previousTransactionId.contains(transactionId)) {
-			throw new InMemoryDatabaseException("Error!Cannot create a transaction - another transaction with same id "
-					+transactionId+" exists");
-		} else {
+		}  else {
 			currentTransactionId = transactionId;
 			isTransactionInProcess = true;
 		}
@@ -138,7 +149,10 @@ public class InMemoryDatabaseRepositoryImpl implements InMemoryDatabaseRepositor
 	}
 
 	public void commitTransaction(String transactionId) {
-		if (!currentTransactionId.equals(transactionId)) {
+		if (previousTransactionId.contains(transactionId)) {
+			throw new InMemoryDatabaseException("Error!Cannot commit previous transaction id - obsolete now");
+		}
+		if (currentTransactionId != null && !currentTransactionId.equals(transactionId)) {
 			throw new InMemoryDatabaseException("Error!Not the current transaction in process");
 		}
 		if (currentPutTransactionMap.size() > 0) {

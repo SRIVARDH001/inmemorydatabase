@@ -20,5 +20,24 @@ public class InMemoryDatabaseService {
 		return repository.get(key, transactinId);
 	}
 
+	public void delete(String key) {
+		repository.delete(key);
+	}
+
+	public void delete(String key, String transactionId) {
+		repository.delete(key, transactionId);
+	}
+
+	public void createTransaction(String transactionId) {
+		repository.createTransaction(transactionId);
+	}
+
+	public void commitTransaction(String transactionId) {
+		repository.commitTransaction(transactionId);
+	}
+
+	public void rollbackTransaction(String transactionId) {
+		repository.rollbackTransaction(transactionId);
+	}
 
 }
