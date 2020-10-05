@@ -11,7 +11,7 @@ import java.util.Map;
  * myDb.createTransaction(“abc”);
  * myDb.put(“a”, “foo”, “abc”);
  * myDb.createTransaction(“xyz”); // throws an error as transaction "abc" in in progress and has not been committed/rolledback.
- * 2. Even when a transaction is in progress, a request without transaction id is considered independent of the current
+ * 2. Even when a transaction is in progress, a modify request without transaction id is considered independent of the current
  * transaction (is auto commited and does not wait to be committed or rolled back).
  * 3. Keys are treated as primary key of a database. They are all UNIQUE.
  * 4. Transaction Ids are always UNIQUE.
